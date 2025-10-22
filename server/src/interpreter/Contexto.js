@@ -4,6 +4,7 @@ class Entorno {
     this.errores = [];
     this.salida = "";
     this.entornoPadre = null;
+    this.diccionarioObjetos = new Map();
   }
 
   declarar(id, tipo, valor) {
@@ -75,6 +76,30 @@ class Entorno {
       this.entornoPadre.agregarSalida(val);
     }
   }
+
+  declararObjeto(id, atributos){
+    if (this.diccionarioObjetos.has(id)) {
+      this.errores.push({ tipo: "Semántico", descripcion: `Objeto ${id} ya declarado` });
+      return;
+    }
+    this.diccionarioObjetos.set(id, atributos);
+  }
+
+  /*guardarMetodoObjeto(objetoId, metodoId, parametros, sentencias){
+    const objeto = this.diccionarioObjetos.get(objetoId);
+    if(!objeto){
+      this.errores.push({ tipo: "Semántico", descripcion: `Objeto ${objetoId} no declarado` });
+      return;
+    }
+    if(!objeto.metodos){
+      objeto.metodos = new Map();
+    }
+    if(objeto.metodos.has(metodoId)){
+      this.errores.push({ tipo: "Semántico", descripcion: `Metodo ${metodoId} ya declarado en el objeto ${objetoId}` });
+      return;
+    }
+    objeto.metodos.set(metodoId, { parametros: parametros, sentencias: sentencias });
+  }*/
 
 }
 

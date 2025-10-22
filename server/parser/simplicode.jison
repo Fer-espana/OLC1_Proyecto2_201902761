@@ -21,10 +21,14 @@
 "que"                         return 'QUE';
 "procedimiento"               return 'PROCEDIMIENTO';
 "ejecutar"                    return 'EJECUTAR';
+"vector"                      return 'VECTOR';
+"objeto"                      return 'OBJETO';
 //EXPRESIONES REGULARES
 [0-9]+                        return 'NUMERO';
 \"[^"]*\"                     return 'CADENA';
 [a-zA-Z_][a-zA-Z0-9_]*        return 'ID';
+//SIMBOLOS Y OPERADORES
+"->"                          return 'ASIGNAR';
 //OPERADORES ARITMETICOS
 "+"                           return '+';
 "-"                           return '-';
@@ -38,12 +42,13 @@
 "&&"                         return '&&';
 "!"                          return '!';
 //SIMBOLOS DE REFERENCIA
-"->"                          return 'ASIGNAR';
 "="                           return '=';
 "."                           return '.';
 //SIMBOLOS DE AGRUPACION
 "("                           return '(';
 ")"                           return ')';
+"["                           return '[';
+"]"                           return ']';
 //SIMBOLOS DE SEPARACION
 "{"                           return '{';
 "}"                           return '}';
@@ -56,13 +61,11 @@
 }
 /lex
 
-/* Operator precedence - lowest to highest */
-%left '+' '-'
-%left '*' '/'
-%left '==' '!='
-%left '||' '&&'
-
-%left ','
+%left ','                    /* comma (argument/value separator) should be lowest */
+%left '||' '&&'              /* logical */
+%left '==' '!='              /* relational */
+%left '+' '-'                /* additive */
+%left '*' '/'                /* multiplicative */
 
 %start programa
 %token INGRESAR COMO CONVALOR TIPO_ENTERO TIPO_CADENA ASIGNAR IMPRIMIR ID NUMERO CADENA NEWLINE VERDADERO FALSO
@@ -119,6 +122,14 @@ instruccion
         { $$ = { tipo: 'LLAMAR_PROCEDIMIENTO', id: $2, argumentos: [] }; }
     | EJECUTAR ID '(' lista_valores ')'
         { $$ = { tipo: 'LLAMAR_PROCEDIMIENTO', id: $2, argumentos: $4 }; }
+    | declaracion_vector_tipo1
+        { $$ = $1; }
+    // | declaracion_vector_tipo2
+    //     { $$ = $1; }
+    | def_objeto
+        { $$ = $1; }
+    | ing_objeto
+        { $$ = $1; }
     ;
 
 declaracion 
@@ -187,6 +198,64 @@ parametro
     { $$ = { tipo: 'PARAMETRO', id: $2, tipoDato: $1, valor: $4 }; }
 ;
 
+declaracion_vector_tipo1
+    : tipo '[' ']' ID '=' VECTOR tipo '[' expresion ']'
+    { $$ = { tipo: 'DECLARACION_VECTOR1', id: $4, tipoDato: $1, tamaño: $7, dimensiones: 1 }; }
+    | tipo '[' ']' '[' ']' ID '=' VECTOR tipo '[' expresion ']' '[' expresion']'
+    { $$ = { tipo: 'DECLARACION_VECTOR1', id: $4, tipoDato: $1, tamaño: $7, dimensiones: 2 }; }
+;
+
+declaracion_vector_tipo2
+    : tipo '[' ']' ID '=' VECTOR tipo '[' lista_vector
+    { $$ = { tipo: 'DECLARACION_VECTOR2', id: $4, tipoDato: $1, valores: $7, dimensiones: 1 }; }
+    | tipo '[' ']' '[' ']' ID '=' tipo '[' lista_vector '[' lista_vector
+    { $$ = { tipo: 'DECLARACION_VECTOR2', id: $4, tipoDato: $1, valores: $10, valores2: $13, dimensiones: 2 }; }
+;
+
+lista_vector
+    : lista_vector ',' expresion
+        { $$ = $1.concat([$3]); }
+    | expresion ']'
+        { $$ = [$1]; }
+;
+
+acceso_vector
+    : ID '[' expresion ']'
+    { $$ = { tipo: 'ACCESO_VECTOR', id: $1, indice: $3 }; }
+    | ID '[' expresion ']' '[' expresion ']'
+    { $$ = { tipo: 'ACCESO_VECTOR', id: $1, indice: $3, indice2: $6 }; }
+;
+
+// Definición de objetos
+def_objeto
+    : OBJETO ID '(' lista_atributos ')'
+        { $$ = { tipo: 'DEF_OBJETO', id: $2, atributos: $4 }; } 
+;
+
+lista_atributos
+    : lista_atributos atributo
+        { $$ = $1.concat([$2]); }
+    | atributo 
+        { $$ = [$1]; }
+;
+
+atributo
+    : ID tipo
+        { $$ = { id: $1, tipo: $2 }; }
+;
+
+// Ingresar objeto
+
+ing_objeto
+    : INGRESAR OBJETO ID /*tipo del objeto*/  ID /*Nombre*/ ASIGNAR objetoNuevo
+        { $$ = { tipo: 'INGRESAR_OBJETO', id: $4, objetoTipo: $3, atributos: $6 }; }
+    ;
+
+objetoNuevo
+    : ID /*tipo del objeto*/ '(' lista_valores ')'
+        { $$ = $3 ; }
+    ;
+
 expresion
     : expresion '+' expresion
         { $$ = { tipo: 'SUMA', izquierda: $1, derecha: $3 }; }
@@ -213,6 +282,10 @@ expresion
         $$ = { tipo: 'BOOLEANO', valor: true }; }
     | FALSO
         { $$ = { tipo: 'BOOLEANO', valor: false }; }
+    | acceso_vector
+        { $$ = $1; }
+    | '(' expresion ')'
+        { $$ = $2; }
     ;
 
     
@@ -223,4 +296,4 @@ tipo
         { $$ = 'cadena'; }
     | TIPO_BOOLEANO
         { $$ = 'booleano'; }
-    ;
+;
