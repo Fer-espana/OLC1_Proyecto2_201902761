@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const parser = require("./parser/parser");
-const interpretar = require("./src/interpreter/interpreter");
+const interpretar = require("./src/interpreter/Interpreter");
 const generarAST = require("./src/astgenerator");
 
 const app = express();
@@ -40,12 +40,14 @@ app.post("/interpretar", (req, res) => {
     const resultado = interpretar(ast);
 
     // 3) AST → DOT (si falla no bloquea respuesta)
-    let astDot = "";
-    try {
-      astDot = generarAST(ast);
-    } catch {
-      astDot = "";
-    }
+  let astDot = "";
+  try {
+    astDot = generarAST(ast);
+    console.log("AST generado exitosamente");
+  } catch (error) {
+    console.error("Error generando AST:", error);
+    astDot = `digraph AST { node [shape=box]; error [label="Error generando AST: ${error.message}"]; }`;
+  }
 
     // 4) Normalizar/ordenar errores del intérprete
     const errores = (resultado.errores || []).map(e => ({
@@ -65,11 +67,11 @@ app.post("/interpretar", (req, res) => {
       return a.linea - b.linea || (a.columna ?? 0) - (b.columna ?? 0);
     });
 
-    res.json({
-      consola: resultado.consola,
-      errores,
-      simbolos: resultado.simbolos,
-      ast: astDot
+  res.json({
+    consola: resultado.consola || "",
+    errores: errores,
+    simbolos: resultado.simbolos || [],
+    ast: astDot
     });
 
   } catch (err) {

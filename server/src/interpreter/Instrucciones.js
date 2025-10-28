@@ -48,27 +48,44 @@ class Imprimir {
 }
 
 class Si {
-  constructor(condicion, sentencias) {
-    this.condicion = condicion;
-    this.sentencias = sentencias;
-  }
+    constructor(condicion, sentencias, oSi = [], contrario = null) {
+        this.condicion = condicion;
+        this.sentencias = sentencias;
+        this.oSi = oSi;        // Array de {condicion, sentencias}
+        this.contrario = contrario; // Array de sentencias
+    }
 
-  interpretar(entorno) {
-    //console.log("Condición SI:",  this.condicion);
-    const cond = this.condicion.interpretar(entorno);
-    if (cond) {
-      for (const instr of this.sentencias) {
-        instr.interpretar(entorno);
-      }
-    } 
-    // else if (this.else_if) {
-
-    // } else if (this.else) {
-    //   for (const instr of this.else) {
-    //     instr.interpretar(entorno);
-    //   }
-    // }
-  }
+    interpretar(entorno) {
+        const cond = this.condicion.interpretar(entorno);
+        
+        if (cond) {
+            for (const instr of this.sentencias) {
+                instr.interpretar(entorno);
+                if (entorno.haOcurridoDetener || entorno.haOcurridoRetorno) return;
+            }
+        } else {
+            // Probar condiciones "o si"
+            let ejecutado = false;
+            for (const oSi of this.oSi) {
+                if (oSi.condicion.interpretar(entorno)) {
+                    for (const instr of oSi.sentencias) {
+                        instr.interpretar(entorno);
+                        if (entorno.haOcurridoDetener || entorno.haOcurridoRetorno) return;
+                    }
+                    ejecutado = true;
+                    break;
+                }
+            }
+            
+            // Ejecutar "de lo contrario" si no se ejecutó nada
+            if (!ejecutado && this.contrario) {
+                for (const instr of this.contrario) {
+                    instr.interpretar(entorno);
+                    if (entorno.haOcurridoDetener || entorno.haOcurridoRetorno) return;
+                }
+            }
+        }
+    }
 }
 
 class Para {

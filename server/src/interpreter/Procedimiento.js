@@ -21,32 +21,35 @@ class LlamarProcedimiento {
     }
 
     interpretar(entorno) {
-        const procedimiento = entorno.obtenerProcedimiento(this.id); //{sentencias: [], parametros: []}
-        if (!procedimiento || procedimiento.tipo !== "PROCEDIMIENTO") {            
+        const procedimiento = entorno.obtenerProcedimiento(this.id);
+        if (!procedimiento || procedimiento.tipo !== "PROCEDIMIENTO") {
             entorno.errores.push({ tipo: "Semántico", descripcion: `Procedimiento ${this.id} no declarado` });
             return;
         }
-        //Crear nuevo entorno para el procedimiento
-        const nuevoEntorno =  new Entorno();
+
+        const nuevoEntorno = new Entorno();
         nuevoEntorno.entornoPadre = entorno;
-        // Si tiene parametros, asignar los argumentos a los parámetros
-        if (procedimiento.parametros.length > 0 ){
-            
+
+        // CORRECCIÓN: Asignar parámetros correctamente
+        if (procedimiento.parametros.length > 0) {
             for (let i = 0; i < procedimiento.parametros.length; i++) {
                 const param = procedimiento.parametros[i];
-                
                 let arg = null;
-                if (this.argumentos[i]){
-                    arg = this.argumentos[i].valor;
-                } else {
-                    
-                    arg = param.valor.valor; // Valor por defecto si no se proporciona argumento
+
+                if (i < this.argumentos.length) {
+                    // CORRECCIÓN: Usar interpretar, no .valor
+                    arg = this.argumentos[i].interpretar(entorno);
+                } else if (param.valor) {
+                    arg = param.valor.interpretar(entorno);
                 }
-                
-                nuevoEntorno.declarar(param.id, param.tipo, arg);
+
+                if (arg !== null) {
+                    nuevoEntorno.declarar(param.id, param.tipoDato, arg);
+                }
             }
         }
-        //Ejecutar las sentencias del procedimiento 
+
+        // Ejecutar sentencias
         for (const instr of procedimiento.sentencias) {
             instr.interpretar(nuevoEntorno);
         }

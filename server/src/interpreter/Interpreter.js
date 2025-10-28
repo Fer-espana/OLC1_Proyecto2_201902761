@@ -17,7 +17,7 @@ const {
 const {
   Numero, 
   Cadena, 
-  aracter, 
+  Caracter, 
   Booleano, 
   Identificador,
   Suma,
