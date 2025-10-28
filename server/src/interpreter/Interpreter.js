@@ -19,6 +19,8 @@ const {
   Resta,
   Multiplicacion,
   Division,
+  Modulo,
+  Potencia,
   Igualdad,
   Desigualdad
 } = require("./Expresiones");
@@ -65,7 +67,11 @@ function convertirNodo(nodo) {
       return new Multiplicacion(convertirNodo(nodo.izquierda), convertirNodo(nodo.derecha));
     case "DIVISION":
       return new Division(convertirNodo(nodo.izquierda), convertirNodo(nodo.derecha));
-    case "SI":
+    case "MODULO": 
+      return new Modulo(convertirNodo(nodo.izquierda), convertirNodo(nodo.derecha));
+    case "POTENCIA": 
+      return new Potencia(convertirNodo(nodo.izquierda), convertirNodo(nodo.derecha));
+      case "SI":
       return new Si(convertirNodo(nodo.condicion), nodo.sentencias.map(convertirNodo));
     case "PARA":
       return new Para(convertirNodo(nodo.inicio), convertirNodo(nodo.condicion), convertirNodo(nodo.actualizacion), nodo.sentencias.map(convertirNodo));

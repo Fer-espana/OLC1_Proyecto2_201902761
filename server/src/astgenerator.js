@@ -69,7 +69,10 @@ function procesarNodo(nodo, nodos, conexiones) {
     case "SUMA":
     case "RESTA":
     case "MULTIPLICACION":
-    case "DIVISION": {
+    case "DIVISION": 
+    case "MODULO":          // <--- Agregar nuevo tipo
+    case "POTENCIA":        // <--- Agregar nuevo tipo
+    {
       const raiz = nuevoNodo(nodo.tipo, nodos);
       const izq = procesarNodo(nodo.izquierda, nodos, conexiones);
       const der = procesarNodo(nodo.derecha, nodos, conexiones);
