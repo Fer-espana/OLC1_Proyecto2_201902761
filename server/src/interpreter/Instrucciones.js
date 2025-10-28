@@ -97,11 +97,90 @@ class Para {
   }
 }
 
+class Decremento {
+  constructor(id) { this.id = id;}
+  interpretar(entorno) {
+    const val = entorno.obtener(this.id);
+    entorno.asignar(this.id, val - 1);
+  }
+}
+
+class Mientras {
+  constructor(condicion, sentencias) {
+    this.condicion = condicion;
+    this.sentencias = sentencias;
+  }
+  interpretar(entorno) {
+    while (this.condicion.interpretar(entorno)) {
+      for (const instr of this.sentencias) {
+        instr.interpretar(entorno);
+        // Manejar break/continue
+        if (entorno.haOcurridoDetener) {
+          entorno.haOcurridoDetener = false;
+          return;
+        }
+        if (entorno.haOcurridoContinuar) {
+          entorno.haOcurridoContinuar = false;
+          break;
+        }
+      }
+    }
+  }
+}
+
+class HacerHastaQue {
+  constructor(sentencias, condicion) {
+    this.sentencias = sentencias;
+    this.condicion = condicion;
+  }
+  interpretar(entorno) {
+    do {
+      for (const instr of this.sentencias) {
+        instr.interpretar(entorno);
+        if (entorno.haOcurridoDetener) {
+          entorno.haOcurridoDetener = false;
+          return;
+        }
+        if (entorno.haOcurridoContinuar) {
+          entorno.haOcurridoContinuar = false;
+          break;
+        }
+      }
+    } while (!this.condicion.interpretar(entorno));
+  }
+}
+
+class Detener {
+  interpretar(entorno) {
+    entorno.haOcurridoDetener = true;
+  }
+}
+
+class Continuar {
+  interpretar(entorno) {
+    entorno.haOcurridoContinuar = true;
+  }
+}
+
+class ImprimirNL {
+  constructor(valor) { this.valor = valor; }
+  interpretar(entorno) {
+    const val = this.valor.interpretar(entorno);
+    entorno.agregarSalida(val + '\n');
+  }
+}
+
 module.exports = {
   Declaracion,
   Asignacion,
   Incremento,
   Imprimir,
   Si,
-  Para
+  Para,
+  Decremento, 
+  Mientras,
+  HacerHastaQue,
+  Detener,
+  Continuar,
+  ImprimirNL
 };

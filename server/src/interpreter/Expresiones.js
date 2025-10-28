@@ -255,17 +255,29 @@ class Caracter {
 }
 
 module.exports = {
-  // Existentes
-  Numero, Cadena, Booleano, Identificador,
-  Suma, Resta, Multiplicacion, Division, Modulo, Potencia,
-  Igualdad, Desigualdad,
-  
-  // Nuevas
-  Menor, MenorIgual, Mayor, MayorIgual,
-  And, Or, Not,
+  Numero, 
+  Cadena, 
+  Booleano, 
+  Identificador,
+  Suma, 
+  Resta, 
+  Multiplicacion, 
+  Division, 
+  Modulo, 
+  Potencia,
+  Igualdad, 
+  Desigualdad,
+  Menor, 
+  MenorIgual, 
+  Mayor, 
+  MayorIgual,
+  And, 
+  Or, 
+  Not,
   NegacionUnaria,
   Ternario,
   Casteo,
-  ToLower, ToUpper,
+  ToLower, 
+  ToUpper,
   Caracter
 };
