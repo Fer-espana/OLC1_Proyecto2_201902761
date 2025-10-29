@@ -12,10 +12,10 @@ class DefinirObjeto {
 }
 
 class IngresarObjeto {
-    constructor(id, tipoObjeto, valores) {  // CORRECCIÓN: Cambiar parámetros
+    constructor(id, tipoObjeto, argumentos) {  // Cambiar parámetro
         this.id = id;
         this.tipoObjeto = tipoObjeto;
-        this.valores = valores; // CORRECCIÓN: Cambiar nombre
+        this.argumentos = argumentos;  // Cambiar nombre
     }
 
     interpretar(entorno) {
@@ -28,7 +28,7 @@ class IngresarObjeto {
         const atributosObjeto = {};
         for (let i = 0; i < objetoDefinido.length; i++) {
             const atributoDefinido = objetoDefinido[i];
-            const valorAtributo = this.valores[i].interpretar(entorno);
+            const valorAtributo = this.argumentos[i].interpretar(entorno);  // Usar argumentos
             atributosObjeto[atributoDefinido.id] = { 
                 tipo: atributoDefinido.tipo, 
                 valor: valorAtributo 

@@ -15,13 +15,8 @@ class DefinirProcedimiento {
 }
 
 class LlamarProcedimiento {
-    constructor(id, argumentos) {
-        this.id = id;
-        this.argumentos = argumentos;
-    }
-
     interpretar(entorno) {
-        const procedimiento = entorno.obtenerProcedimiento(this.id);
+        const procedimiento = entorno.obtener(this.id);  // Cambiar por obtener
         if (!procedimiento || procedimiento.tipo !== "PROCEDIMIENTO") {
             entorno.errores.push({ tipo: "Semántico", descripcion: `Procedimiento ${this.id} no declarado` });
             return;

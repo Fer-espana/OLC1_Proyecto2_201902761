@@ -1,8 +1,11 @@
 %lex
 %%
 [ \t\r]+                      /* skip horizontal whitespace */
+// COMENTARIOS
+"//"[^\n]*                    /* skip comentarios de línea */
+"/*"([^*]|\*+[^/*])*\*+"/"    /* skip comentarios multilínea */
 
-// PALABRAS RESERVADAS
+// PALABRAS RESERVADAS - CORREGIDAS LAS MAYÚSCULAS
 "ingresar"                    return 'INGRESAR';
 "como"                        return 'COMO';
 "con valor"                   return 'CONVALOR';
@@ -13,8 +16,8 @@
 "booleano"                    return 'TIPO_BOOLEANO';
 "imprimir"                    return 'IMPRIMIR';
 "nl"                          return 'NL';
-"verdadero"                   return 'VERDADERO';
-"falso"                       return 'FALSO';
+"Verdadero"                   return 'VERDADERO';  // Cambiado a mayúscula
+"Falso"                       return 'FALSO';      // Cambiado a mayúscula
 "si"                          return 'SI';
 "o"                           return 'O';
 "de"                          return 'DE';
@@ -55,13 +58,13 @@
 "^"                           return '^';
 "%"                           return '%';
 
-// OPERADORES RELACIONALES
+// OPERADORES RELACIONALES - ORDEN CORREGIDO: los más largos primero
 "=="                          return '==';
 "!="                          return '!=';
-"<"                           return '<';
 "<="                          return '<=';
-">"                           return '>';
 ">="                          return '>=';
+"<"                           return '<';
+">"                           return '>';
 
 // OPERADORES LOGICOS
 "||"                          return '||';
@@ -85,10 +88,6 @@
 // SIMBOLOS DE SEPARACION
 ","                           return ',';
 ";"                           return ';';
-
-// COMENTARIOS
-"//"[^\n]*                    /* skip comentarios de línea */
-"/*"([^*]|\*+[^/*])*\*+"/"    /* skip comentarios multilínea */
 
 \n                            return 'NEWLINE';
 <<EOF>>                       return 'EOF';
@@ -183,6 +182,8 @@ instruccion
         { $$ = $1; }
     | def_metodo_objeto
         { $$ = $1; }
+    | declaracion_objeto_simple
+        { $$ = $1; }
     | DETENER
         { $$ = { tipo: 'DETENER', loc: this.yylloc }; }
     | CONTINUAR
@@ -200,6 +201,12 @@ declaracion
         { $$ = { tipo: 'DECLARACION', id: $2, tipoDato: $1, valor: $4, loc: this.yylloc }; }
     | tipo ID '=' expresion
         { $$ = { tipo: 'DECLARACION', id: $2, tipoDato: $1, valor: $4, loc: this.yylloc }; }
+    ;
+
+// NUEVA: Declaración simple de objetos (Persona p;)
+declaracion_objeto_simple
+    : ID ID
+        { $$ = { tipo: 'DECLARACION_OBJETO', tipoObjeto: $1, id: $2, loc: this.yylloc }; }
     ;
 
 lista_valores 
@@ -222,33 +229,44 @@ asignacion
         { $$ = $1; }
     ;
 
+// CORREGIDO: Estructura de condicionales mejorada
 sentencia_condicional 
-    : SI '(' expresion ')' '{' sentencias '}'
-        { $$ = { tipo: 'SI', condicion: $3, sentencias: $6, oSi: [], contrario: null, loc: this.yylloc }; }
-    | SI '(' expresion ')' '{' sentencias '}' DE LO CONTRARIO '{' sentencias '}'
-        { $$ = { tipo: 'SI', condicion: $3, sentencias: $6, oSi: [], contrario: $12, loc: this.yylloc }; }
-    | SI '(' expresion ')' '{' sentencias '}' lista_o_si
-        { $$ = { tipo: 'SI', condicion: $3, sentencias: $6, oSi: $8, contrario: null, loc: this.yylloc }; }
-    | SI '(' expresion ')' '{' sentencias '}' lista_o_si DE LO CONTRARIO '{' sentencias '}'
-        { $$ = { tipo: 'SI', condicion: $3, sentencias: $6, oSi: $8, contrario: $12, loc: this.yylloc }; }
+    : SI '(' expresion ')' bloque condicional_extra
+        { $$ = { tipo: 'SI', condicion: $3, sentencias: $5.sentencias, oSi: $6.oSi, contrario: $6.contrario, loc: this.yylloc }; }
+    ;
+
+bloque
+    : '{' sentencias '}'
+        { $$ = { sentencias: $2, loc: this.yylloc }; }
+    ;
+
+condicional_extra
+    : lista_o_si DE LO CONTRARIO bloque
+        { $$ = { oSi: $1, contrario: $4.sentencias }; }
+    | DE LO CONTRARIO bloque
+        { $$ = { oSi: [], contrario: $3.sentencias }; }
+    | lista_o_si
+        { $$ = { oSi: $1, contrario: null }; }
+    | /* empty */
+        { $$ = { oSi: [], contrario: null }; }
     ;
 
 lista_o_si
-    : lista_o_si O SI '(' expresion ')' '{' sentencias '}'
-        { $$ = $1.concat([{ condicion: $5, sentencias: $8, loc: this.yylloc }]); }
-    | O SI '(' expresion ')' '{' sentencias '}'
-        { $$ = [{ condicion: $4, sentencias: $7, loc: this.yylloc }]; }
+    : lista_o_si O SI '(' expresion ')' bloque
+        { $$ = $1.concat([{ condicion: $5, sentencias: $7.sentencias, loc: this.yylloc }]); }
+    | O SI '(' expresion ')' bloque
+        { $$ = [{ condicion: $4, sentencias: $6.sentencias, loc: this.yylloc }]; }
     ;
 
 ciclo 
-    : PARA '(' declaracion ';' expresion ';' asignacion ')' '{' sentencias '}'
-        { $$ = { tipo: 'PARA', inicio: $3, condicion: $5, actualizacion: $7, sentencias: $10, loc: this.yylloc }; }
-    | PARA '(' asignacion ';' expresion ';' asignacion ')' '{' sentencias '}'
-        { $$ = { tipo: 'PARA', inicio: $3, condicion: $5, actualizacion: $7, sentencias: $10, loc: this.yylloc }; }
-    | MIENTRAS '(' expresion ')' '{' sentencias '}'
-        { $$ = { tipo: 'MIENTRAS', condicion: $3, sentencias: $6, loc: this.yylloc }; }
-    | HACER '{' sentencias '}' HASTA QUE '(' expresion ')'
-        { $$ = { tipo: 'HACER_HASTA_QUE', sentencias: $3, condicion: $7, loc: this.yylloc }; }
+    : PARA '(' declaracion ';' expresion ';' asignacion ')' bloque
+        { $$ = { tipo: 'PARA', inicio: $3, condicion: $5, actualizacion: $7, sentencias: $9.sentencias, loc: this.yylloc }; }
+    | PARA '(' asignacion ';' expresion ';' asignacion ')' bloque
+        { $$ = { tipo: 'PARA', inicio: $3, condicion: $5, actualizacion: $7, sentencias: $9.sentencias, loc: this.yylloc }; }
+    | MIENTRAS '(' expresion ')' bloque
+        { $$ = { tipo: 'MIENTRAS', condicion: $3, sentencias: $5.sentencias, loc: this.yylloc }; }
+    | HACER bloque HASTA QUE '(' expresion ')'
+        { $$ = { tipo: 'HACER_HASTA_QUE', sentencias: $2.sentencias, condicion: $6, loc: this.yylloc }; }
     ;
 
 actualizacion
@@ -259,17 +277,17 @@ actualizacion
     ;
 
 procedimiento 
-    : PROCEDIMIENTO ID '(' ')' '{' sentencias '}' 
-        { $$ = { tipo: 'DEF_PROCEDIMIENTO', id: $2, sentencias: $6, parametros: [], loc: this.yylloc }; }
-    | PROCEDIMIENTO ID '(' lista_parametros ')' '{' sentencias '}' 
-        { $$ = { tipo: 'DEF_PROCEDIMIENTO', id: $2, sentencias: $7, parametros: $4, loc: this.yylloc }; }
+    : PROCEDIMIENTO ID '(' ')' bloque
+        { $$ = { tipo: 'DEF_PROCEDIMIENTO', id: $2, sentencias: $5.sentencias, parametros: [], loc: this.yylloc }; }
+    | PROCEDIMIENTO ID '(' lista_parametros ')' bloque
+        { $$ = { tipo: 'DEF_PROCEDIMIENTO', id: $2, sentencias: $6.sentencias, parametros: $4, loc: this.yylloc }; }
     ;
 
 funcion 
-    : FUNCION tipo ID '(' ')' '{' sentencias '}' 
-        { $$ = { tipo: 'DEF_FUNCION', id: $3, tipoRetorno: $2, sentencias: $7, parametros: [], loc: this.yylloc }; }
-    | FUNCION tipo ID '(' lista_parametros ')' '{' sentencias '}' 
-        { $$ = { tipo: 'DEF_FUNCION', id: $3, tipoRetorno: $2, sentencias: $8, parametros: $5, loc: this.yylloc }; }
+    : FUNCION tipo ID '(' ')' bloque
+        { $$ = { tipo: 'DEF_FUNCION', id: $3, tipoRetorno: $2, sentencias: $6.sentencias, parametros: [], loc: this.yylloc }; }
+    | FUNCION tipo ID '(' lista_parametros ')' bloque
+        { $$ = { tipo: 'DEF_FUNCION', id: $3, tipoRetorno: $2, sentencias: $7.sentencias, parametros: $5, loc: this.yylloc }; }
     ;
 
 lista_parametros 
@@ -314,45 +332,63 @@ acceso_vector
         { $$ = { tipo: 'ACCESO_VECTOR', id: $1, indices: [$3, $6], loc: this.yylloc }; }
     ;
 
-// Definición de objetos
+// CORREGIDO: Definición de objetos con métodos internos
 def_objeto
-    : OBJETO ID '(' lista_atributos ')'
-        { $$ = { tipo: 'DEF_OBJETO', id: $2, atributos: $4, loc: this.yylloc }; } 
+    : OBJETO ID '{' lista_miembros '}'
+        { $$ = { tipo: 'DEF_OBJETO', id: $2, miembros: $4, loc: this.yylloc }; } 
     ;
 
-lista_atributos
-    : lista_atributos atributo
+lista_miembros
+    : lista_miembros miembro
         { $$ = $1.concat([$2]); }
-    | atributo 
+    | miembro 
         { $$ = [$1]; }
     ;
 
+miembro
+    : atributo ';'
+        { $$ = { tipo: 'ATRIBUTO', id: $1.id, tipoDato: $1.tipo, loc: this.yylloc }; }
+    | metodo
+        { $$ = $1; }
+    ;
+
 atributo
-    : ID tipo
-        { $$ = { id: $1, tipo: $2, loc: this.yylloc }; }
+    : tipo ID
+        { $$ = { id: $2, tipo: $1, loc: this.yylloc }; }
     ;
 
-// Definición de métodos en objetos
-def_metodo_objeto
-    : ID CON METODO ID '(' ')' '{' sentencias '}'
-        { $$ = { tipo: 'DEF_METODO_OBJETO', objeto: $1, id: $4, parametros: [], sentencias: $8, loc: this.yylloc }; }
-    | ID CON METODO ID '(' lista_parametros ')' '{' sentencias '}'
-        { $$ = { tipo: 'DEF_METODO_OBJETO', objeto: $1, id: $4, parametros: $6, sentencias: $9, loc: this.yylloc }; }
+// NUEVO: Métodos dentro de objetos
+metodo
+    : PROCEDIMIENTO ID '(' ')' bloque
+        { $$ = { tipo: 'METODO_OBJETO', id: $2, tipo: 'PROCEDIMIENTO', parametros: [], sentencias: $5.sentencias, loc: this.yylloc }; }
+    | PROCEDIMIENTO ID '(' lista_parametros ')' bloque
+        { $$ = { tipo: 'METODO_OBJETO', id: $2, tipo: 'PROCEDIMIENTO', parametros: $4, sentencias: $6.sentencias, loc: this.yylloc }; }
+    | FUNCION tipo ID '(' ')' bloque
+        { $$ = { tipo: 'METODO_OBJETO', id: $3, tipo: 'FUNCION', tipoRetorno: $2, parametros: [], sentencias: $6.sentencias, loc: this.yylloc }; }
+    | FUNCION tipo ID '(' lista_parametros ')' bloque
+        { $$ = { tipo: 'METODO_OBJETO', id: $3, tipo: 'FUNCION', tipoRetorno: $2, parametros: $5, sentencias: $7.sentencias, loc: this.yylloc }; }
     ;
 
-// Ingresar objeto
+// CORREGIDO: Cambiar 'valores' por 'argumentos' para coincidir con el intérprete
 ing_objeto
     : INGRESAR OBJETO ID ASIGNAR ID '(' lista_valores ')'
-        { $$ = { tipo: 'INGRESAR_OBJETO', id: $3, tipoObjeto: $5, valores: $7, loc: this.yylloc }; }
+        { $$ = { tipo: 'INGRESAR_OBJETO', id: $3, tipoObjeto: $5, argumentos: $7, loc: this.yylloc }; }
     ;
 
-// Acceso a atributos y métodos
+// CORREGIDO: Métodos de objeto externos (objeto con metodo)
+def_metodo_objeto
+    : ID CON METODO ID '(' ')' bloque
+        { $$ = { tipo: 'DEF_METODO_OBJETO', objeto: $1, id: $4, parametros: [], sentencias: $7.sentencias, loc: this.yylloc }; }
+    | ID CON METODO ID '(' lista_parametros ')' bloque
+        { $$ = { tipo: 'DEF_METODO_OBJETO', objeto: $1, id: $4, parametros: $6, sentencias: $8.sentencias, loc: this.yylloc }; }
+    ;
+
 acceso_atributo
     : ID '.' ID
         { $$ = { tipo: 'ACCESO_ATRIBUTO', objeto: $1, atributo: $3, loc: this.yylloc }; }
     ;
 
-// JERARQUÍA DE EXPRESIONES - ESTRUCTURA CORREGIDA SIN CONFLICTOS
+// JERARQUÍA DE EXPRESIONES
 expresion
     : expresion_ternaria
     ;

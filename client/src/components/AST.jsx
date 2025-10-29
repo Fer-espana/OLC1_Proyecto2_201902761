@@ -22,18 +22,12 @@ export default function AST({ dot }) {
   return (
     <div className="seccion">
       <h3>Árbol de Sintaxis (AST)</h3>
-      <div style={{ marginBottom: "0.5rem" }}>
+      <div className="zoom-controls">  {/* ✅ CAMBIO AQUÍ: clase CSS en lugar de style */}
         <button onClick={() => setScale(scale * 1.2)}>🔍+</button>
         <button onClick={() => setScale(scale / 1.2)}>🔍-</button>
         <button onClick={() => setScale(1)}>Reset</button>
       </div>
-      <div
-        style={{
-          overflow: "auto",
-          border: "1px solid #444",
-          maxHeight: "600px"
-        }}
-      >
+      <div className="ast-container">  {/* ✅ CAMBIO AQUÍ: clase CSS en lugar de style */}
         <div
           style={{
             transform: `scale(${scale})`,

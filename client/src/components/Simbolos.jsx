@@ -1,7 +1,12 @@
 export default function Simbolos({ data }) {
-    return (
-      <div className="seccion">
-        <h3>Tabla de Símbolos</h3>
+  const simbolos = Array.isArray(data) ? data : [];
+  
+  return (
+    <div className="seccion">
+      <h3>Tabla de Símbolos</h3>
+      {simbolos.length === 0 ? (
+        <p>No hay símbolos declarados.</p>
+      ) : (
         <table>
           <thead>
             <tr>
@@ -11,7 +16,7 @@ export default function Simbolos({ data }) {
             </tr>
           </thead>
           <tbody>
-            {data.map((s, i) => (
+            {simbolos.map((s, i) => (
               <tr key={i}>
                 <td>{s.id}</td>
                 <td>{s.tipo}</td>
@@ -20,7 +25,7 @@ export default function Simbolos({ data }) {
             ))}
           </tbody>
         </table>
-      </div>
-    );
-  }
-  
+      )}
+    </div>
+  );
+}

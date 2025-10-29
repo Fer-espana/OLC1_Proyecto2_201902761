@@ -11,10 +11,12 @@ export default function Editor() {
   const [consola, setConsola] = useState("");
   const [errores, setErrores] = useState([]);
   const [simbolos, setSimbolos] = useState([]);
+  const [cargando, setCargando] = useState(false);
 
   const ejecutar = async () => {
+    setCargando(true);
     try {
-      const res = await axios.post("/api/interpretar", { codigo }); // <= proxy
+      const res = await axios.post("/api/interpretar", { codigo });
       setConsola(res.data.consola ?? "");
       setErrores(res.data.errores ?? []);
       setSimbolos(res.data.simbolos ?? []);
@@ -29,6 +31,8 @@ export default function Editor() {
       setErrores([{ tipo: "Cliente", descripcion: msg }]);
       setSimbolos([]);
       setAstDot("");
+    } finally {
+      setCargando(false); // ← Importante
     }
   };
 
@@ -59,6 +63,11 @@ export default function Editor() {
 
       <div className="seccion">
         <AST dot={astDot} />
+
+        <button onClick={ejecutar} disabled={cargando}>
+          {cargando ? "Ejecutando..." : "Ejecutar"}
+        </button>
+
       </div>
     </div>
   );
